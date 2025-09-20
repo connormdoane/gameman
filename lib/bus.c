@@ -1,22 +1,64 @@
 #include <bus.h>
 #include <cart.h>
+#include <ram.h>
+#include <cpu.h>
 
 u8 bus_read(u16 address)
 {
-  if (address < 0x8000) return cart_read(address);
+  if (address < 0x8000) { // ROM Data
+    return cart_read(address);
+  } else if (address < 0xA000) { // Char/Map Data
+    printf("UNSUPPORTED bus_read(%04X)\n", address);
+    NO_IMPL
+  } else if (address < 0xC000) { // Cartridge RAM
+    return cart_read(address);
+  } else if (address < 0xE000) { // WRAM
+    return wram_read(address);
+  } else if (address < 0xFE00) { // Reserved Echo RAM
+    return 0;
+  } else if (address < 0xFEA0) { // OAM
+    printf("UNSUPPORTED bus_read(%04X)\n", address);
+    NO_IMPL
+  } else if (address < 0xFF00) { // Reserved Unusable
+    return 0;
+  } else if (address < 0xFF80) { // I/O Registers
+    printf("UNSUPPORTED bus_read(%04X)\n", address);
+    NO_IMPL
+  } else if (address == 0xFFFF) { // CPU Enable Register
+    return cpu_get_ie_register();
+  }
 
-  printf("UNSUPPORTED bus_read(%04X)\n", address);
+  return hram_read(address); // High RAM
 }
 
 void bus_write(u16 address, u8 value)
 {
-  if (address < 0x8000) {
-    //ROM Data
+  if (address < 0x8000) { // ROM Data
     cart_write(address, value);
-    return;
+  } else if (address < 0xA000) { // Char/Map Data
+    printf("UNSUPPORTED bus_write(%04X)\n", address);
+    NO_IMPL
+  } else if (address < 0xC000) { // EXT-RAM
+    cart_write(address, value);
+  } else if (address < 0xE000) { // WRAM
+    wram_write(address, value);
+  } else if (address < 0xFE00) { // Reserved Echo RAM
+    printf("UNSUPPORTED bus_write(%04X)\n", address);
+    NO_IMPL
+  } else if (address < 0xFEA0) { // OAM
+    printf("UNSUPPORTED bus_write(%04X)\n", address);
+    NO_IMPL
+  } else if (address < 0xFF00) { // Unusable Reserved
+    printf("UNSUPPORTED bus_write(%04X)\n", address);
+    NO_IMPL
+  } else if (address < 0xFF80) { // I/O Registers
+    printf("UNSUPPORTED bus_write(%04X)\n", address);
+    //NO_IMPL
+  } else if (address == 0xFFFF) { // CPU SET ENABLE REGISTER
+    cpu_set_ie_register(value);
+  } else {
+    hram_write(address, value);
   }
-
-  printf("UNSUPPORTED bus_write(%04X)\n", address);
 }
 
 u16 bus_read16(u16 address)
