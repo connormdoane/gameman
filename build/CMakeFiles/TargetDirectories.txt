@@ -1,3 +1,0 @@
-/home/connor/Projects/gameman/build/CMakeFiles/gameman.dir
-/home/connor/Projects/gameman/build/CMakeFiles/edit_cache.dir
-/home/connor/Projects/gameman/build/CMakeFiles/rebuild_cache.dir

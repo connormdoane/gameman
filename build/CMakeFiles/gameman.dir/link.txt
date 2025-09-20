@@ -1,1 +1,0 @@
-/usr/bin/cc -Wl,--dependency-file=CMakeFiles/gameman.dir/link.d CMakeFiles/gameman.dir/main.c.o CMakeFiles/gameman.dir/lib/cart.c.o CMakeFiles/gameman.dir/lib/cpu.c.o CMakeFiles/gameman.dir/lib/emu.c.o -o gameman  -lSDL2 -lSDL2_ttf -lSDL2 -lSDL2_ttf
