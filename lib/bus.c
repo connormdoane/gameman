@@ -2,6 +2,7 @@
 #include <cart.h>
 #include <ram.h>
 #include <cpu.h>
+#include <io.h>
 
 u8 bus_read(u16 address)
 {
@@ -18,14 +19,11 @@ u8 bus_read(u16 address)
     return 0;
   } else if (address < 0xFEA0) { // OAM
     printf("UNSUPPORTED bus_read(%04X)\n", address);
-    /* NO_IMPL */
     return 0x0;
   } else if (address < 0xFF00) { // Reserved Unusable
     return 0x0;
   } else if (address < 0xFF80) { // I/O Registers
-    printf("UNSUPPORTED bus_read(%04X)\n", address);
-    /* NO_IMPL */
-    return 0x0;
+    return io_read(address);
   } else if (address == 0xFFFF) { // CPU Enable Register
     return cpu_get_ie_register();
   }
@@ -39,7 +37,6 @@ void bus_write(u16 address, u8 value)
     cart_write(address, value);
   } else if (address < 0xA000) { // Char/Map Data
     printf("UNSUPPORTED bus_write(%04X)\n", address);
-    /* NO_IMPL */
   } else if (address < 0xC000) { // EXT-RAM
     cart_write(address, value);
   } else if (address < 0xE000) { // WRAM
@@ -48,6 +45,7 @@ void bus_write(u16 address, u8 value)
   } else if (address < 0xFEA0) { // OAM
   } else if (address < 0xFF00) { // Unusable Reserved
   } else if (address < 0xFF80) { // I/O Registers
+    io_write(address, value);
   } else if (address == 0xFFFF) { // CPU SET ENABLE REGISTER
     cpu_set_ie_register(value);
   } else {

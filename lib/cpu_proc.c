@@ -3,7 +3,7 @@
 #include <bus.h>
 #include <stack.h>
 
-void cpu_set_flags(cpu_context* ctx, char z, char n, char h, char c)
+void cpu_set_flags(cpu_context* ctx, int8_t z, int8_t n, int8_t h, int8_t c)
 {
   if (z != -1) BIT_SET(ctx->regs.f, 7, z);
   if (n != -1) BIT_SET(ctx->regs.f, 6, n);
@@ -47,7 +47,7 @@ static void proc_cb(cpu_context* ctx)
   u8 op = ctx->fetched_data;
   reg_type reg = decode_reg(op & 0b111);
   u8 bit = (op >> 3) & 0b111;
-  u8 bit_op = (op >> 6) & 0b111;
+  u8 bit_op = (op >> 6) & 0b11;
   u8 reg_val = cpu_read_reg8(reg);
 
   emu_cycles(1);
@@ -117,7 +117,7 @@ static void proc_cb(cpu_context* ctx)
     cpu_set_flags(ctx, !reg_val, false, false, !!(old & 0x80));
   } return;
   case 5: { // SRA
-    u8 u = (u8)reg_val >> 1; // TODO
+    u8 u = (int8_t)reg_val >> 1;
     cpu_set_reg8(reg, u);
     cpu_set_flags(ctx, !u, false, false, reg_val & 1);
   } return;
@@ -211,7 +211,7 @@ static void proc_rra(cpu_context* ctx)
   u8 c = CPU_FLAG_C;
   u8 new_c = ctx->regs.a & 1;
 
-  ctx->regs.a >> 1;
+  ctx->regs.a >>= 1;
   ctx->regs.a |= (c << 7);
 
   cpu_set_flags(ctx, 0, 0, 0, new_c);
@@ -237,7 +237,7 @@ static void proc_xor(cpu_context* ctx)
 
 static void proc_or(cpu_context* ctx)
 {
-  ctx->regs.a |= ctx->fetched_data;
+  ctx->regs.a |= ctx->fetched_data & 0xFF;
   cpu_set_flags(ctx, ctx->regs.a == 0, 0, 0, 0);
 }
 
@@ -337,7 +337,7 @@ static void proc_jp(cpu_context* ctx)
 
 static void proc_jr(cpu_context* ctx)
 {
-  char rel = (char)(ctx->fetched_data & 0xFF);
+  int8_t rel = (char)(ctx->fetched_data & 0xFF);
   u16 addr = ctx->regs.pc + rel;
   goto_addr(ctx, addr, false);
 }
@@ -399,7 +399,7 @@ static void proc_push(cpu_context* ctx)
   emu_cycles(1);
   stack_push(hi);
 
-  u16 lo = cpu_read_reg(ctx->cur_inst->reg_2) & 0xFF;
+  u16 lo = cpu_read_reg(ctx->cur_inst->reg_1) & 0xFF;
   emu_cycles(1);
   stack_push(lo);
 
@@ -473,7 +473,7 @@ static void proc_sbc(cpu_context* ctx)
   int h = ((int)cpu_read_reg(ctx->cur_inst->reg_1) & 0xF) - ((int)ctx->fetched_data & 0xF) - ((int)CPU_FLAG_C) < 0;
   int c = ((int)cpu_read_reg(ctx->cur_inst->reg_1)) - ((int)ctx->fetched_data) - ((int)CPU_FLAG_C) < 0;
 
-  cpu_set_reg(ctx->cur_inst->reg_1, cpu_read_reg(ctx->cur_inst->reg_1) - val == 0);
+  cpu_set_reg(ctx->cur_inst->reg_1, cpu_read_reg(ctx->cur_inst->reg_1) - val);
   cpu_set_flags(ctx, z, 1, h, c);
 }
 
@@ -516,7 +516,7 @@ static void proc_add(cpu_context* ctx)
   if (ctx->cur_inst->reg_1 == RT_SP) {
     z = 0;
     h = (cpu_read_reg(ctx->cur_inst->reg_1) & 0xF) + (ctx->fetched_data & 0xF) >= 0x10;
-    c = (int)(cpu_read_reg(ctx->cur_inst->reg_1) & 0xFF) + (int)(ctx->fetched_data & 0xFF) > 0x100;
+    c = (int)(cpu_read_reg(ctx->cur_inst->reg_1) & 0xFF) + (int)(ctx->fetched_data & 0xFF) >= 0x100;
   }
 
   cpu_set_reg(ctx->cur_inst->reg_1, val & 0xFFFF);
