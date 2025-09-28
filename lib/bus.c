@@ -3,14 +3,15 @@
 #include <ram.h>
 #include <cpu.h>
 #include <io.h>
+#include <ppu.h>
+#include <dma.h>
 
 u8 bus_read(u16 address)
 {
   if (address < 0x8000) { // ROM Data
     return cart_read(address);
   } else if (address < 0xA000) { // Char/Map Data
-    printf("UNSUPPORTED bus_read(%04X)\n", address);
-    NO_IMPL
+    return ppu_vram_read(address);
   } else if (address < 0xC000) { // Cartridge RAM
     return cart_read(address);
   } else if (address < 0xE000) { // WRAM
@@ -18,8 +19,8 @@ u8 bus_read(u16 address)
   } else if (address < 0xFE00) { // Reserved Echo RAM
     return 0;
   } else if (address < 0xFEA0) { // OAM
-    printf("UNSUPPORTED bus_read(%04X)\n", address);
-    return 0x0;
+    if (dma_transferring()) return 0xFF;
+    return ppu_oam_read(address);
   } else if (address < 0xFF00) { // Reserved Unusable
     return 0x0;
   } else if (address < 0xFF80) { // I/O Registers
@@ -36,13 +37,15 @@ void bus_write(u16 address, u8 value)
   if (address < 0x8000) { // ROM Data
     cart_write(address, value);
   } else if (address < 0xA000) { // Char/Map Data
-    printf("UNSUPPORTED bus_write(%04X)\n", address);
+    ppu_vram_write(address, value);
   } else if (address < 0xC000) { // EXT-RAM
     cart_write(address, value);
   } else if (address < 0xE000) { // WRAM
     wram_write(address, value);
   } else if (address < 0xFE00) { // Reserved Echo RAM
   } else if (address < 0xFEA0) { // OAM
+    if (dma_transferring()) return;
+    ppu_oam_write(address, value);
   } else if (address < 0xFF00) { // Unusable Reserved
   } else if (address < 0xFF80) { // I/O Registers
     io_write(address, value);
